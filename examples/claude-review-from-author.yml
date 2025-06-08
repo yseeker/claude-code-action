@@ -13,8 +13,8 @@ jobs:
       github.event.pull_request.user.login == 'external-contributor'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
+      contents: write
+      pull-requests: write
       id-token: write
     steps:
       - name: Checkout repository
