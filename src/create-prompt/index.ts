@@ -23,16 +23,64 @@ import { GITHUB_SERVER_URL } from "../github/api/config";
 export type { CommonFields, PreparedContext } from "./types";
 
 const BASE_ALLOWED_TOOLS = [
-  "Edit",
+  "Task",
+  "Bash",
   "Glob",
   "Grep",
   "LS",
   "Read",
+  "Edit",
+  "MultiEdit",
   "Write",
+  "NotebookRead",
+  "NotebookEdit",
+  "TodoRead",
+  "TodoWrite",
   "mcp__github_file_ops__commit_files",
   "mcp__github_file_ops__delete_files",
+  "mcp__github__add_issue_comment",
+  "mcp__github__add_pull_request_review_comment",
+  "mcp__github__create_branch",
+  "mcp__github__create_issue",
+  "mcp__github__create_or_update_file",
+  "mcp__github__create_pull_request",
+  "mcp__github__create_pull_request_review",
+  "mcp__github__create_repository",
+  "mcp__github__delete_file",
+  "mcp__github__fork_repository",
+  "mcp__github__get_code_scanning_alert",
+  "mcp__github__get_commit",
+  "mcp__github__get_file_contents",
+  "mcp__github__get_issue",
+  "mcp__github__get_issue_comments",
+  "mcp__github__get_me",
+  "mcp__github__get_pull_request",
+  "mcp__github__get_pull_request_comments",
+  "mcp__github__get_pull_request_files",
+  "mcp__github__get_pull_request_reviews",
+  "mcp__github__get_pull_request_status",
+  "mcp__github__get_secret_scanning_alert",
+  "mcp__github__get_tag",
+  "mcp__github__list_branches",
+  "mcp__github__list_code_scanning_alerts",
+  "mcp__github__list_commits",
+  "mcp__github__list_issues",
+  "mcp__github__list_pull_requests",
+  "mcp__github__list_secret_scanning_alerts",
+  "mcp__github__list_tags",
+  "mcp__github__merge_pull_request",
+  "mcp__github__push_files",
+  "mcp__github__search_code",
+  "mcp__github__search_issues",
+  "mcp__github__search_repositories",
+  "mcp__github__search_users",
+  "mcp__github__update_issue",
+  "mcp__github__update_issue_comment",
+  "mcp__github__update_pull_request",
+  "mcp__github__update_pull_request_branch",
+  "mcp__github__update_pull_request_comment"
 ];
-const DISALLOWED_TOOLS = ["WebSearch", "WebFetch"];
+const DISALLOWED_TOOLS = [""];
 
 export function buildAllowedToolsString(
   eventData: EventData,
@@ -405,34 +453,30 @@ ${eventData.isPR ? formattedChangedFiles || "No files changed" : ""}
 <is_pr>${eventData.isPR ? "true" : "false"}</is_pr>
 <trigger_context>${triggerContext}</trigger_context>
 <repository>${context.repository}</repository>
-${
-  eventData.isPR
-    ? `<pr_number>${eventData.prNumber}</pr_number>`
-    : `<issue_number>${eventData.issueNumber ?? ""}</issue_number>`
-}
+${eventData.isPR
+      ? `<pr_number>${eventData.prNumber}</pr_number>`
+      : `<issue_number>${eventData.issueNumber ?? ""}</issue_number>`
+    }
 <claude_comment_id>${context.claudeCommentId}</claude_comment_id>
 <trigger_username>${context.triggerUsername ?? "Unknown"}</trigger_username>
 <trigger_phrase>${context.triggerPhrase}</trigger_phrase>
-${
-  (eventData.eventName === "issue_comment" ||
-    eventData.eventName === "pull_request_review_comment" ||
-    eventData.eventName === "pull_request_review") &&
-  eventData.commentBody
-    ? `<trigger_comment>
+${(eventData.eventName === "issue_comment" ||
+      eventData.eventName === "pull_request_review_comment" ||
+      eventData.eventName === "pull_request_review") &&
+      eventData.commentBody
+      ? `<trigger_comment>
 ${stripHtmlComments(eventData.commentBody)}
 </trigger_comment>`
-    : ""
-}
-${
-  context.directPrompt
-    ? `<direct_prompt>
+      : ""
+    }
+${context.directPrompt
+      ? `<direct_prompt>
 ${stripHtmlComments(context.directPrompt)}
 </direct_prompt>`
-    : ""
-}
-${
-  eventData.eventName === "pull_request_review_comment"
-    ? `<comment_tool_info>
+      : ""
+    }
+${eventData.eventName === "pull_request_review_comment"
+      ? `<comment_tool_info>
 IMPORTANT: For this inline PR review comment, you have been provided with ONLY the mcp__github_file_ops__update_pull_request_comment tool to update this specific review comment.
 
 Tool usage example for mcp__github_file_ops__update_pull_request_comment:
@@ -444,7 +488,7 @@ Tool usage example for mcp__github_file_ops__update_pull_request_comment:
 }
 All four parameters (owner, repo, commentId, body) are required.
 </comment_tool_info>`
-    : `<comment_tool_info>
+      : `<comment_tool_info>
 IMPORTANT: For this event type, you have been provided with ONLY the mcp__github_file_ops__update_issue_comment tool to update comments.
 
 Tool usage example for mcp__github_file_ops__update_issue_comment:
@@ -456,7 +500,7 @@ Tool usage example for mcp__github_file_ops__update_issue_comment:
 }
 All four parameters (owner, repo, commentId, body) are required.
 </comment_tool_info>`
-}
+    }
 
 Your task is to analyze the context, understand the request, and provide helpful responses and/or implement code changes as needed.
 
@@ -510,20 +554,18 @@ ${context.directPrompt ? `   - DIRECT INSTRUCTION: A direct instruction was prov
       - Use file system tools to make the change locally.
       - If you discover related tasks (e.g., updating tests), add them to the todo list.
       - Mark each subtask as completed as you progress.
-      ${
-        eventData.isPR && !eventData.claudeBranch
-          ? `
+      ${eventData.isPR && !eventData.claudeBranch
+      ? `
       - Push directly using mcp__github_file_ops__commit_files to the existing branch (works for both new and existing files).
       - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).
       - When pushing changes with this tool and TRIGGER_USERNAME is not "Unknown", include a "Co-authored-by: ${context.triggerUsername} <${context.triggerUsername}@users.noreply.github.com>" line in the commit message.`
-          : `
+      : `
       - You are already on the correct branch (${eventData.claudeBranch || "the PR branch"}). Do not create a new branch.
       - Push changes directly to the current branch using mcp__github_file_ops__commit_files (works for both new and existing files)
       - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).
       - When pushing changes and TRIGGER_USERNAME is not "Unknown", include a "Co-authored-by: ${context.triggerUsername} <${context.triggerUsername}@users.noreply.github.com>" line in the commit message.
-      ${
-        eventData.claudeBranch
-          ? `- Provide a URL to create a PR manually in this format:
+      ${eventData.claudeBranch
+        ? `- Provide a URL to create a PR manually in this format:
         [Create a PR](${GITHUB_SERVER_URL}/${context.repository}/compare/${eventData.defaultBranch}...<branch-name>?quick_pull=1&title=<url-encoded-title>&body=<url-encoded-body>)
         - IMPORTANT: Use THREE dots (...) between branch names, not two (..)
           Example: ${GITHUB_SERVER_URL}/${context.repository}/compare/main...feature-branch (correct)
@@ -537,9 +579,9 @@ ${context.directPrompt ? `   - DIRECT INSTRUCTION: A direct instruction was prov
           - Reference to the original ${eventData.isPR ? "PR" : "issue"}
           - The signature: "Generated with [Claude Code](https://claude.ai/code)"
         - Just include the markdown link with text "Create a PR" - do not add explanatory text before it like "You can create a PR using this link"`
-          : ""
+        : ""
       }`
-      }
+    }
 
    C. For Complex Changes:
       - Break down the implementation into subtasks in your comment checklist.
