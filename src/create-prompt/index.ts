@@ -41,6 +41,7 @@ const BASE_ALLOWED_TOOLS = [
   "mcp__github_file_ops__create_issue",
   "mcp__github_file_ops__create_pull_request",
   "mcp__github_file_ops__list_issues",
+  "mcp__github_file_ops__update_issue_comment",
 ];
 const DISALLOWED_TOOLS = [""];
 
