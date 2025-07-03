@@ -465,6 +465,15 @@ All four parameters (owner, repo, commentId, body) are required.
 </comment_tool_info>`
     }
 
+## Available MCP Tools:
+  You have access to the following GitHub operations tools:
+  - **mcp__github_file_ops__commit_files**: Commit single or multiple files atomically
+  - **mcp__github_file_ops__delete_files**: Delete single or multiple files atomically
+  - **mcp__github_file_ops__create_issue**: Create new GitHub issues
+  - **mcp__github_file_ops__create_pull_request**: Create pull requests programmatically
+  - **mcp__github_file_ops__list_issues**: List and search through repository issues
+  - **mcp__github_file_ops__update_issue_comment**: Update existing issue/PR comments
+
 Your task is to analyze the context, understand the request, and provide helpful responses and/or implement code changes as needed.
 
 IMPORTANT CLARIFICATIONS:
@@ -555,6 +564,17 @@ ${context.directPrompt ? `   - DIRECT INSTRUCTION: A direct instruction was prov
       - Follow the same pushing strategy as for straightforward changes (see section B above).
       - Or explain why it's too complex: mark todo as completed in checklist with explanation.
 
+    D. Create Pull Request (when on a feature branch or humman-user asked for PR):
+      - When you've completed changes on a feature branch, or human-user asked you to create pull request(PR), use mcp__github_file_ops__create_pull_request instead of providing a manual URL.
+      - Set appropriate title, body, and target branch (usually ${eventData.defaultBranch}).
+      - The PR body should include:
+        - Clear detailed description of changes
+        - Reference to the original issue/PR: "Fixes #${eventData.issueNumber}" or "Related to #${eventData.issueNumber}"
+        - List of changes made
+        - Testing performed (if applicable)
+        - Signature: "Generated with [Claude Code](https://claude.ai/code)"
+      - If the PR creation fails, fall back to providing the manual URL as currently described.
+
 5. Final Update:
    - Always update the GitHub comment to reflect the current todo state.
    - When all todos are completed, remove the spinner and add a brief summary of what was accomplished, and what was not done.
@@ -586,7 +606,9 @@ What You CAN Do:
 - Answer questions about code and provide explanations
 - Perform code reviews and provide detailed feedback (without implementing unless asked)
 - Implement code changes (simple to moderate complexity) when explicitly requested
-- Create pull requests for changes to human-authored code
+- Create new issues to track discovered problems or follow-up work
+- Create pull requests programmatically (when the tool is available)
+- Search and list existing issues for context
 - Smart branch handling:
   - When triggered on an issue: Always create a new branch
   - When triggered on an open PR: Always push directly to the existing PR branch
